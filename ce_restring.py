@@ -30,6 +30,9 @@ def is_hint_line(text):
 def is_start_with_msgid(text):
     return text.strip().startswith("msgid")
 
+def is_start_with_msgstr(text):
+    return text.strip().startswith("msgstr")
+
 def get_string_from_msgid(text):
     return [f"\"{string}\"" for string in re.findall(r"\"(.*?)\"", text)]
 
@@ -48,6 +51,7 @@ def edit_string_in_file(file_path, is_lfm=False):
     edited_file_path = file_path + ".tmp"
     try:
         with open(file_path, 'r', encoding="utf-8") as original_file, open(edited_file_path, 'w', encoding="utf-8") as edited_file:
+            msgid_inline_strings = []
             for line in original_file:
                 line_for_write = line
                 if is_lfm:
@@ -58,10 +62,11 @@ def edit_string_in_file(file_path, is_lfm=False):
                             line_for_write = line_for_write.replace(string, build_greek_from_eng(string_no_ban))
                 else:
                     if is_start_with_msgid(line_for_write):
-                        inline_strings = get_string_from_msgid(line_for_write)
-                        for string in inline_strings:
+                        msgid_inline_strings = get_string_from_msgid(line_for_write)
+                    if is_start_with_msgstr(line_for_write):
+                        for string in msgid_inline_strings:
                             string_no_ban = ban_to_sus_string(string)
-                            line_for_write = line_for_write.replace(string, build_greek_from_eng(string_no_ban))
+                            line_for_write = line_for_write.replace("\"\"", build_greek_from_eng(string_no_ban))
                 edited_file.write(line_for_write)
         os.remove(file_path)
         os.rename(edited_file_path, file_path)
